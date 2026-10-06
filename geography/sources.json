@@ -1,0 +1,16 @@
+{
+  "city": "Kuala Lumpur, Malaysia",
+  "buildings": 3842,
+  "roads": 1886,
+  "places": 89,
+  "known_heights": 111,
+  "estimated_heights": 3731,
+  "sources": [
+    "https://github.com/Pavel-Shulepov/osm-here-com-parser/tree/master/out",
+    "https://github.com/Iscaz/FYP_Walkability/tree/main/FYP_walkability-main/FYP_Walkability_System/backend/data/klcc_osm_data",
+    "https://github.com/Anilkumar140/kuala_lumpur_geojson"
+  ],
+  "attribution": "\u00a9 OpenStreetMap contributors",
+  "coverage": "Central Kuala Lumpur building snapshot, KLCC road snapshot",
+  "height_note": "OSM heights when available; otherwise 12 m or OSM levels \u00d7 3.2 m. Petronas Towers use published 451.9 m height."
+}
