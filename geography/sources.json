@@ -12,5 +12,11 @@
   ],
   "attribution": "\u00a9 OpenStreetMap contributors",
   "coverage": "Central Kuala Lumpur building snapshot, KLCC road snapshot",
-  "height_note": "OSM heights when available; otherwise 12 m or OSM levels \u00d7 3.2 m. Petronas Towers use published 451.9 m height."
+  "height_note": "OSM heights when available; otherwise 12 m or OSM levels \u00d7 3.2 m. Petronas Towers use published 451.9 m height.",
+  "online_basemap": {
+    "day": "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+    "night": "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+    "attribution": "\u00a9 OpenStreetMap contributors \u00b7 \u00a9 CARTO",
+    "fallback": "Bundled city snapshot if provider tiles fail or time out"
+  }
 }
