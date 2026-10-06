@@ -1,1 +1,201 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Kin · Temporarily offline</title><link rel="icon" href="./favicon.svg"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f6f2;color:#25392d;font:17px system-ui}main{padding:40px;max-width:460px}b{font-size:40px;letter-spacing:-3px}h1{font-size:28px;letter-spacing:-1px}p{line-height:1.6;color:#69756b}</style></head><body><main><b>kin ✳</b><h1>We’re making room for a new world.</h1><p>Kin is temporarily offline while we rebuild the map and make it easier to find your people.</p></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f6f7f3">
+<meta name="description" content="Find your people on a clear street map and get directions between shared locations.">
+<title>Kin · Your people, clearly</title>
+<link rel="icon" href="./favicon.svg">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+@font-face{font-family:DM;src:url('./assets/dm-sans-latin-400-normal-CW0RaeGs.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:DM;src:url('./assets/dm-sans-latin-600-normal-Aqo67rzb.woff2') format('woff2');font-weight:600;font-display:swap}
+:root{--bg:#f6f7f3;--ink:#28392f;--muted:#758073;--green:#526d4e;--pale:#edf1e8;--border:#e4e7de;--white:#fff;--person-color:#839775}
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 DM,system-ui,sans-serif}
+button,input,select{font:inherit}button,a,input,select{touch-action:manipulation}button,a{ -webkit-tap-highlight-color:transparent}
+button{cursor:pointer;color:inherit}button:disabled{cursor:default;opacity:.52}
+a{color:inherit}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #7e9869;outline-offset:3px}
+button{border:0;background:none}
+.app{max-width:1680px;margin:auto;min-height:100vh}
+header{padding:22px 34px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:20px}
+.brand{font-size:36px;line-height:1;font-weight:600;letter-spacing:-2.5px}.brand em{font-size:27px;color:#849b70;font-style:normal;display:inline-block;vertical-align:top;margin:1px 0 0 7px}
+.header-center{color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase}
+.header-actions{display:flex;gap:10px;align-items:center}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;font-weight:600;padding:11px 15px;border:1px solid var(--border);text-decoration:none;background:var(--white);line-height:1.3}
+.button.primary{background:var(--green);border-color:var(--green);color:var(--white)}
+.button:hover:not(:disabled){filter:brightness(.97)}
+.button.small{font-size:12px;padding:8px 11px}
+.top{display:flex;align-items:end;justify-content:space-between;padding:27px 34px 21px;gap:20px}
+.eyebrow{font-size:10px;letter-spacing:2px;font-weight:600;color:#7a8a6e;text-transform:uppercase;margin-bottom:6px}
+h1{font-size:30px;letter-spacing:-1.1px;line-height:1.2;margin:0;font-weight:600}
+.top p{margin:8px 0 0;color:var(--muted);font-size:13px}
+.demo-note{max-width:285px;font-size:12px;color:var(--muted);border-left:2px solid #bdcaae;padding-left:13px}
+.demo-note strong{display:block;font-weight:600;color:#5d7254;margin-bottom:2px}
+.workspace{padding:0 34px 24px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:21px;align-items:start}
+.map-shell{position:relative;height:calc(100vh - 285px);min-height:570px;max-height:1000px;border:1px solid #d8dfcf;border-radius:17px;overflow:hidden;background:#e5e9db;isolation:isolate}
+#map{height:100%;width:100%;background:#e8ede1}
+.map-toolbar{position:absolute;top:15px;left:15px;right:15px;z-index:600;display:flex;justify-content:space-between;align-items:start;pointer-events:none;gap:8px}
+.map-toolbar>*{pointer-events:auto}
+.map-place{padding:9px 13px;border:1px solid #ffffffa0;border-radius:9px;background:#fffffff2;box-shadow:0 2px 12px #314d3610;font-weight:600;font-size:12px;display:flex;gap:8px;align-items:center}
+.dot{height:6px;width:6px;display:inline-block;border-radius:50%;background:#869e6f}
+#map-status{position:absolute;bottom:28px;right:10px;z-index:600;font:10px DM,system-ui,sans-serif;padding:5px 8px;background:#fffffff0;border-radius:6px;color:#60735b;pointer-events:none}
+#tile-warning{position:absolute;top:73px;left:16px;right:16px;z-index:600;background:#fff9e9;border:1px solid #e6d7b7;border-radius:9px;padding:9px 12px;font-size:12px}
+#map-unavailable{position:absolute;inset:0;z-index:590;display:grid;place-content:center;text-align:center;padding:40px;background:#e9eedf;color:#546950}
+#map-unavailable strong{font-size:21px}
+#map-unavailable p{max-width:300px;margin:10px auto}
+.map-footer{display:flex;justify-content:space-between;gap:15px;margin-top:12px;align-items:center;font-size:11px;color:var(--muted)}
+.map-footer b{font-weight:400;color:#5c7152}
+.side{display:flex;flex-direction:column;gap:15px}
+.panel{border:1px solid var(--border);border-radius:14px;background:#fff;padding:18px}
+.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+h2{font-size:16px;letter-spacing:-.3px;font-weight:600;margin:0}
+.count-pill{border:1px solid #dfe7d4;background:#f2f5ed;border-radius:20px;font-size:10px;color:#647856;padding:4px 8px}
+.search{position:relative;margin-bottom:11px}
+.search span{position:absolute;left:12px;top:8px;color:#88917e;font-size:19px;pointer-events:none}
+.search input{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--border);border-radius:9px;background:#fafbf8;color:var(--ink);font-size:12px}
+.people-list{max-height:254px;overflow:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:3px}
+.person-row{padding:8px;border-radius:9px;display:flex;align-items:center;gap:11px;text-align:left;width:100%;border:1px solid transparent}
+.person-row:hover{background:#f7f9f3}.person-row.active{background:#f0f4e9;border-color:#dbe5ce}
+.portrait{display:inline-grid;place-items:center;flex-shrink:0;height:38px;width:38px;border-radius:50%;background:#ecf0e3;color:#4c6950;border:2px solid var(--person-color);overflow:hidden;font-weight:600}
+.portrait img{width:100%;height:100%;object-fit:cover}
+.person-text{display:grid;gap:1px;min-width:0;flex:1}.person-text strong{font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.person-text>span{font-size:10px;color:var(--muted);overflow-wrap:anywhere}
+.location-badge{font-size:8px;letter-spacing:.5px;color:#8b947f}
+.text-button{color:#718064;font-size:11px;text-decoration:underline;text-underline-offset:3px;padding:0}
+.panel-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:11px;margin-top:10px;border-top:1px solid #eef0e9}
+#people-empty{font-size:12px;color:var(--muted);padding:10px}
+.route-fields{display:grid;grid-template-columns:1fr 32px;column-gap:8px;align-items:center}
+.route-fields label{grid-column:1;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.8px;margin-bottom:4px}
+.route-fields select{grid-column:1;width:100%;min-width:0;border:1px solid var(--border);background:#fafbf8;border-radius:8px;color:var(--ink);padding:9px 28px 9px 10px;font-size:12px;margin-bottom:10px}
+#swap-route{grid-column:2;grid-row:1/5;border:1px solid var(--border);border-radius:8px;background:#fafbf8;height:35px;font-size:20px;padding:0}
+.route-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.route-actions .button{font-size:11px;flex:1;padding:10px 9px;white-space:nowrap}
+#route-result{margin:12px 0 6px;font-size:11px;line-height:1.6;color:#4d694b}
+#route-caption{font-size:10px;color:var(--muted);margin:0;line-height:1.5}
+.detail-head{display:flex;align-items:center;gap:12px}
+.detail-avatar{display:grid;place-items:center;height:44px;width:44px;border:2px solid var(--person-color);background:var(--pale);overflow:hidden;border-radius:50%;font-size:18px}
+.detail-avatar img{width:100%;height:100%;object-fit:cover}
+#person-name{font-size:18px;overflow-wrap:anywhere}#person-area{font-size:12px;color:var(--muted);margin:2px 0 0;overflow-wrap:anywhere}
+#person-kind{display:inline-block;font-size:10px;margin:13px 0 7px;background:#f0f3e9;border-radius:15px;padding:4px 8px;color:#6b7f5a}
+#person-coordinates{font-variant-numeric:tabular-nums;font-size:11px;margin:2px 0;color:#74846c}
+#person-note{font-size:11px;color:var(--muted);line-height:1.6;margin:9px 0 14px}
+#directions-to-person{width:100%;font-size:11px;white-space:normal;overflow-wrap:anywhere}
+#remove-location{margin-top:11px}
+.privacy-foot{font-size:10px;color:var(--muted);padding:0 6px;line-height:1.7}
+.privacy-foot b{font-weight:600;color:#6d7d64}
+#notice{min-height:22px;padding:0 34px 16px;color:#5a7252;font-size:12px}
+footer{margin:0 34px;padding:16px 0 24px;border-top:1px solid var(--border);display:flex;gap:15px;justify-content:space-between;color:#98a08f;font-size:10px}
+footer span:first-child{color:#87977c}
+.kin-marker{background:none;border:0;transition:filter .15s}
+.map-person{display:flex;flex-direction:column;align-items:center;position:relative}
+.marker-portrait{display:grid;place-items:center;height:43px;width:43px;border:3px solid white;outline:2px solid var(--person-color);border-radius:50%;overflow:hidden;background:#e8eddf;color:#4f6f51;box-shadow:0 3px 8px #21342835;font:600 16px DM,system-ui}
+.marker-portrait img{width:100%;height:100%;object-fit:cover}
+.marker-name{margin-top:5px;background:#fff;border:1px solid #e1e7d9;box-shadow:0 2px 6px #21342820;padding:3px 8px;border-radius:6px;font:600 11px/1.4 DM,system-ui;color:#405c42;max-width:140px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.selected-marker{z-index:900!important}
+.selected-marker .marker-portrait{outline-width:4px;outline-color:#486a4b}.selected-marker .marker-name{background:#4d6d4e;color:#fff;border-color:#4d6d4e}
+.leaflet-control-zoom{border:1px solid #d7dfcb!important;box-shadow:0 2px 10px #21342810!important}
+.leaflet-control-zoom a{color:#526a4e!important;background:#fff!important}
+.leaflet-control-attribution{font-size:9px!important;background:#fffffff0!important}
+.leaflet-control-attribution a{color:#59744b}
+dialog{border:1px solid var(--border);border-radius:18px;padding:28px;background:#fff;color:var(--ink);width:min(450px,calc(100% - 32px));box-shadow:0 25px 80px #25392d35}
+dialog::backdrop{background:#243b2b70;backdrop-filter:blur(3px)}
+.dialog-header{display:flex;justify-content:space-between;align-items:start;gap:20px}
+.dialog-header h2{font-size:23px;line-height:1.2}
+#close-dialog{font-size:23px;line-height:1;padding:0 2px}
+dialog p{font-size:12px;color:var(--muted);line-height:1.7}
+#add-form label{display:block;font-size:12px;font-weight:600;margin:13px 0 0}
+#add-form input{display:block;width:100%;border:1px solid var(--border);border-radius:8px;background:#fafbf8;padding:10px 12px;margin-top:5px;color:var(--ink)}
+.coordinate-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dialog-actions{display:flex;justify-content:end;gap:9px;margin-top:22px}
+#add-error{color:#a15a39;margin:8px 0 0;min-height:0}
+.dialog-note{font-size:10px}
+noscript{display:block;padding:25px;text-align:center;background:#fff3df}
+@media(min-width:1300px){.workspace{grid-template-columns:minmax(0,1fr) 360px}}
+@media(max-width:960px){header{padding:20px 24px}.header-center{display:none}.top{padding:24px}.workspace{padding:0 24px 24px;grid-template-columns:minmax(0,1fr) 300px;gap:14px}.panel{padding:15px}.map-shell{min-height:620px}.demo-note{max-width:245px}footer{margin:0 24px}#notice{padding-left:24px;padding-right:24px}}
+@media(max-width:740px){header{padding:18px}.brand{font-size:32px}.header-actions{gap:6px}.header-actions .button{padding:10px;font-size:11px}.top{padding:22px 18px 16px;display:block}h1{font-size:27px}.demo-note{margin-top:14px;max-width:none;font-size:11px}.demo-note strong{display:inline;margin-right:5px}.workspace{display:block;padding:0 14px 18px}.map-shell{height:49vh;min-height:360px;max-height:600px;border-radius:13px}.map-toolbar{top:10px;left:10px;right:10px}.map-place{padding:9px 10px;font-size:11px}.map-footer{padding:0 4px;margin-bottom:16px;align-items:start;line-height:1.6}.map-footer span:last-child{max-width:175px;text-align:right}.side{display:grid;grid-template-columns:1fr 1fr;gap:12px}.people-panel{grid-column:1/-1}.people-list{max-height:225px}.person-row{padding:9px}.portrait{height:42px;width:42px}.person-text strong{font-size:13px}.person-text>span{font-size:11px}.privacy-foot{grid-column:1/-1}.route-actions{display:grid;grid-template-columns:1fr}.route-actions .button{font-size:12px}.route-fields{grid-template-columns:1fr 26px;column-gap:5px}#swap-route{font-size:18px}.route-fields select{font-size:11px;padding-left:7px}footer{margin:0 18px;display:block}footer span{display:block;margin:4px 0}#notice{padding:0 18px 12px;font-size:11px}}
+@media(max-width:420px){.side{grid-template-columns:1fr}.people-panel,.privacy-foot{grid-column:auto}.route-actions{display:flex}.top p{font-size:12px}.header-actions .button{padding:9px 7px;font-size:10px}.panel{padding:17px}.coordinate-fields{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="./kin-map.js"></script>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="brand" aria-label="Kin">kin.<em aria-hidden="true">✳</em></div>
+<div class="header-center">A little closer</div>
+<div class="header-actions">
+<button class="button" id="use-location" type="button"><span aria-hidden="true">◎</span> Use my location</button>
+<button class="button primary" type="button" data-add-location><span aria-hidden="true">+</span> Add shared location</button>
+</div>
+</header>
+<main>
+<div class="top">
+<div><div class="eyebrow">Your world</div><h1>Your people, clearly.</h1><p>A street map, a familiar face, a way to get there.</p></div>
+<div class="demo-note"><strong>Start with a demo.</strong>Sample people are marked DEMO. Add coordinates someone shared with you to use your own locations.</div>
+</div>
+<div class="workspace">
+<section class="map-column" aria-label="People map">
+<div class="map-shell">
+<div id="map" role="region" aria-label="Interactive street map of selected people"></div>
+<div class="map-toolbar">
+<div class="map-place"><span class="dot" aria-hidden="true"></span>Your shared world</div>
+<button class="button small" type="button" id="fit-people"><span aria-hidden="true">⌖</span> Show everyone</button>
+</div>
+<div id="tile-warning" hidden>Some street tiles could not load. Person markers and Open directions are still available.</div>
+<div id="map-status" role="status">Loading street map…</div>
+<div id="map-unavailable" hidden><strong>The map couldn’t load.</strong><p>Check your connection and refresh. You can still choose two people and open directions.</p></div>
+</div>
+<div class="map-footer"><span><span class="dot" aria-hidden="true"></span> <b id="people-count">5 people on your map</b></span><span>Zoom freely · Select a person to find them</span></div>
+</section>
+<aside class="side" aria-label="People and directions">
+<section class="panel people-panel">
+<div class="panel-title"><h2>Your people</h2><span class="count-pill">YOUR MAP</span></div>
+<div class="search"><span aria-hidden="true">⌕</span><input id="people-search" type="search" placeholder="Find a person or place" aria-label="Find a person or place" autocomplete="off"></div>
+<div class="people-list" id="people-list"></div><p id="people-empty" hidden></p>
+<div class="panel-foot"><button type="button" class="text-button" data-add-location>Add shared location</button><button type="button" class="text-button" id="clear-demo">Remove demo people</button></div>
+</section>
+<section class="panel" id="route-panel" aria-labelledby="route-title">
+<div class="panel-title"><h2 id="route-title">Find a way there</h2><span class="count-pill">DRIVING</span></div>
+<div class="route-fields">
+<label for="route-from">FROM</label><select id="route-from"></select>
+<button type="button" id="swap-route" aria-label="Swap starting person and destination">⇅</button>
+<label for="route-to">TO</label><select id="route-to"></select>
+</div>
+<div class="route-actions"><button type="button" class="button primary" id="route-button">Show route</button><a class="button" id="external-directions" target="_blank" rel="noopener noreferrer" hidden>Open directions ↗</a></div>
+<p id="route-result" role="status">Choose two people to see a driving route.</p>
+<p id="route-caption"></p>
+</section>
+<section class="panel" id="person-detail" aria-label="Selected person">
+<div class="detail-head"><div id="detail-portrait"></div><div><h2 id="person-name"></h2><p id="person-area"></p></div></div>
+<span id="person-kind"></span><p id="person-coordinates"></p><p id="person-note"></p>
+<button type="button" class="button" id="directions-to-person">Directions to this person</button>
+<button type="button" class="text-button" id="remove-location" hidden>Remove this location</button>
+</section>
+<div class="privacy-foot"><b>Your choice, every time.</b> Device and shared locations last for this visit. No live sharing or user accounts are connected. Drawing a route sends the selected coordinates to OSRM; Open directions sends them to Google Maps.<br><button type="button" class="text-button" id="forget-location" hidden>Remove or cancel my device location</button></div>
+</aside>
+</div>
+<div id="notice" role="status" aria-live="polite"></div>
+</main>
+<footer><span>✳ A little closer, wherever you are.</span><span>Map © OpenStreetMap contributors · Routes by the public OSRM demo service</span></footer>
+</div>
+<dialog id="add-dialog" aria-labelledby="add-title" aria-describedby="add-description">
+<div class="dialog-header"><h2 id="add-title">A place for your people.</h2><button type="button" id="close-dialog" aria-label="Close add location dialog">×</button></div>
+<p id="add-description">Add coordinates someone has chosen to share with you. Their location will appear on this map for your current visit.</p>
+<form id="add-form">
+<label for="shared-name">Person’s name<input id="shared-name" name="name" maxlength="40" placeholder="e.g. Sarah" required autofocus></label>
+<label for="shared-area">Place or area <span style="font-weight:400">(optional)</span><input id="shared-area" name="area" maxlength="60" placeholder="e.g. Outside the café"></label>
+<div class="coordinate-fields">
+<label for="shared-lat">Latitude<input id="shared-lat" name="latitude" type="number" step="any" min="-85.05112" max="85.05112" placeholder="3.14750" required></label>
+<label for="shared-lng">Longitude<input id="shared-lng" name="longitude" type="number" step="any" min="-180" max="180" placeholder="101.71320" required></label>
+</div>
+<p id="add-error" role="alert"></p>
+<p class="dialog-note">This places a pin at the supplied coordinates; it does not track the person. The free route service may be unavailable. Google Maps remains available through Open directions.</p>
+<div class="dialog-actions"><button type="button" class="button" id="cancel-add">Cancel</button><button type="submit" class="button primary">Add to my map</button></div>
+</form>
+</dialog>
+<noscript>Kin needs JavaScript to show the map and people. Enable JavaScript, then refresh this page.</noscript>
+</body>
+</html>
